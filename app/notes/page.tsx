@@ -10,7 +10,14 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(false);
 
   const fetchNotes = async () => {
-    const { data } = await supabase.from("notes").select("*").order("created_at", { ascending: false });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user.id) return;
+    
+    const { data } = await supabase
+      .from("notes")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false });
     setNotes(data || []);
   };
 
@@ -44,23 +51,48 @@ export default function NotesPage() {
   const addNote = async () => {
     if (!title.trim() || !content.trim()) return;
     setLoading(true);
-    await supabase.from("notes").insert({
-      title,
-      content,
-    });
-    setTitle("");
-    setContent("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) {
+        alert("Please log in first");
+        setLoading(false);
+        return;
+      }
+      await supabase.from("notes").insert({
+        title,
+        content,
+        user_id: session.user.id,
+      });
+      setTitle("");
+      setContent("");
+      fetchNotes();
+    } catch (error) {
+      console.error("Error adding note:", error);
+      alert("Failed to save note");
+    }
     setLoading(false);
-    fetchNotes();
   };
 
   const deleteNote = async (id: string) => {
-    await supabase.from("notes").delete().eq("id", id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user.id) return;
+    
+    await supabase
+      .from("notes")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", session.user.id);
     fetchNotes();
   };
 
   const generateFlashcards = async (noteId: string, content: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) {
+        alert("Please log in first");
+        return;
+      }
+
       const res = await fetch("/api/ai/flashcards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,6 +112,7 @@ export default function NotesPage() {
           note_id: noteId,
           question: card.question,
           answer: card.answer,
+          user_id: session.user.id,
         });
       }
 
@@ -101,30 +134,30 @@ export default function NotesPage() {
       {/* Content */}
       <div className="relative z-10">
         {/* Header */}
-        <div className="px-8 pt-12 pb-8 border-b border-slate-700/30">
+        <div className="px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 md:pt-12 pb-6 md:pb-8 border-b border-slate-700/30">
           <div className="max-w-4xl mx-auto">
-            <div className="mb-2 text-sm font-medium text-emerald-400 tracking-wider uppercase">
+            <div className="mb-2 text-xs sm:text-sm font-medium text-emerald-400 tracking-wider uppercase">
               Knowledge Base
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-2 sm:mb-3">
               <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-teal-300 bg-clip-text text-transparent">
                 My Notes
               </span>
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl">
+            <p className="text-slate-400 text-sm sm:text-base md:text-lg max-w-2xl">
               Capture your thoughts, organize ideas, and build your personal knowledge system.
             </p>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="px-8 py-12">
+        <div className="px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12">
           <div className="max-w-4xl mx-auto">
             {/* Input Section */}
-            <div className="mb-12 relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-8 shadow-2xl">
+            <div className="mb-8 md:mb-12 relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-6 sm:p-8 shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
               <div className="relative z-10">
-                <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-semibold text-white mb-4 sm:mb-6 flex items-center gap-2">
                   <Plus className="w-5 h-5 text-emerald-400" />
                   Create New Note
                 </h2>
@@ -135,19 +168,19 @@ export default function NotesPage() {
                     placeholder="Note title..."
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20 transition-all duration-200"
+                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20 transition-all duration-200 text-sm sm:text-base"
                   />
                   <textarea
                     placeholder="What's on your mind?"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     rows={4}
-                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20 transition-all duration-200 resize-none"
+                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20 transition-all duration-200 resize-none text-sm sm:text-base"
                   />
                   <button
                     onClick={addNote}
                     disabled={loading || !title.trim() || !content.trim()}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {loading ? "Saving..." : "Save Note"}
                   </button>
@@ -156,30 +189,30 @@ export default function NotesPage() {
             </div>
 
             {/* Notes Grid */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {notes.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-slate-400 text-lg">No notes yet. Create your first note to get started.</p>
+                <div className="text-center py-12 sm:py-16">
+                  <p className="text-slate-400 text-sm sm:text-lg">No notes yet. Create your first note to get started.</p>
                 </div>
               ) : (
                 notes.map((note, index) => (
                   <div
                     key={note.id}
-                    className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-6 hover:border-emerald-500/50 transition-all duration-300 cursor-default transform hover:scale-102 hover:shadow-xl"
+                    className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-4 sm:p-6 hover:border-emerald-500/50 transition-all duration-300 cursor-default transform hover:scale-102 hover:shadow-xl"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                    <div className="relative z-10 flex justify-between items-start gap-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-emerald-300 transition-colors duration-200">
+                    <div className="relative z-10 flex justify-between items-start gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-semibold text-white mb-2 group-hover:text-emerald-300 transition-colors duration-200 truncate">
                           {note.title}
                         </h3>
-                        <p className="text-slate-300 leading-relaxed text-sm line-clamp-3">
+                        <p className="text-slate-300 leading-relaxed text-xs sm:text-sm line-clamp-3">
                           {note.content}
                         </p>
                         {note.created_at && (
-                          <p className="text-xs text-slate-500 mt-3">
+                          <p className="text-xs text-slate-500 mt-2 sm:mt-3">
                             {new Date(note.created_at).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
@@ -188,24 +221,26 @@ export default function NotesPage() {
                           </p>
                         )}
                       </div>
-                      <button
-                        onClick={() => summarizeNote(note.content)}
-                        className="flex-shrink-0 p-2 rounded-lg bg-blue-500/30 hover:bg-blue-500 text-white transition-all"
-                      >
-                        ✨
-                      </button>
-                      <button
-                        onClick={() => generateFlashcards(note.id, note.content)}
-                        className="flex-shrink-0 p-2 rounded-lg bg-green-500/30 hover:bg-green-500 text-white transition-all"
-                      >
-                        🧠
-                      </button>
-                      <button
-                        onClick={() => deleteNote(note.id)}
-                        className="flex-shrink-0 p-2 rounded-lg bg-slate-700/30 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-all duration-200 opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => summarizeNote(note.content)}
+                          className="p-2 rounded-lg bg-blue-500/30 hover:bg-blue-500 text-white transition-all text-sm sm:text-base"
+                        >
+                          ✨
+                        </button>
+                        <button
+                          onClick={() => generateFlashcards(note.id, note.content)}
+                          className="p-2 rounded-lg bg-green-500/30 hover:bg-green-500 text-white transition-all text-sm sm:text-base"
+                        >
+                          🧠
+                        </button>
+                        <button
+                          onClick={() => deleteNote(note.id)}
+                          className="p-2 rounded-lg bg-slate-700/30 hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))

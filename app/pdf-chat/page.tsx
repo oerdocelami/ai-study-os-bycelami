@@ -23,9 +23,16 @@ export default function PDFChatPage() {
 
   const fetchPDFs = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) {
+        setLoading(false);
+        return;
+      }
+
       const { data } = await supabase
         .from("pdfs")
         .select("*")
+        .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
       setPdfs(data || []);
@@ -103,42 +110,42 @@ export default function PDFChatPage() {
       {/* Content */}
       <div className="relative z-10 flex flex-col h-screen">
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-slate-700/30">
+        <div className="px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 border-b border-slate-700/30">
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-3 mb-3">
-              <BookOpen className="w-8 h-8 text-amber-400" />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+              <BookOpen className="w-6 h-6 sm:w-8 h-8 text-amber-400" />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
                 Chat with PDFs
               </h1>
             </div>
-            <p className="text-slate-400">
+            <p className="text-slate-400 text-xs sm:text-sm md:text-base">
               Ask questions about your uploaded lecture slides
             </p>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-8">
           <div className="max-w-4xl mx-auto">
             {pdfs.length === 0 ? (
-              <div className="text-center py-12">
-                <BookOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">No PDFs uploaded</h2>
-                <p className="text-slate-400 mb-6">
+              <div className="text-center py-12 sm:py-16">
+                <BookOpen className="w-12 h-12 sm:w-16 h-16 text-slate-600 mx-auto mb-3 sm:mb-4" />
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">No PDFs uploaded</h2>
+                <p className="text-slate-400 mb-4 sm:mb-6 text-sm sm:text-base">
                   Upload lecture PDFs first to ask questions
                 </p>
                 <a
                   href="/upload"
-                  className="inline-block bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="inline-block bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold px-6 sm:px-8 py-2 sm:py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
                 >
                   Upload PDF
                 </a>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* PDF Selector */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-6">
-                  <label className="block text-white font-semibold mb-3">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl border border-slate-700/50 p-4 sm:p-6">
+                  <label className="block text-white font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
                     Select a Lecture
                   </label>
                   <select
@@ -148,7 +155,7 @@ export default function PDFChatPage() {
                       setSelectedPDF(pdf);
                       setMessages([]);
                     }}
-                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200"
+                    className="w-full bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200 text-sm sm:text-base"
                   >
                     <option value="">Select a PDF...</option>
                     {pdfs.map((pdf) => (
@@ -161,27 +168,27 @@ export default function PDFChatPage() {
 
                 {/* Messages */}
                 {selectedPDF && (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {messages.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400">
-                        <MessageCircle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                        <p>Ask a question about "{selectedPDF.name}"</p>
+                      <div className="text-center py-8 sm:py-12 text-slate-400">
+                        <MessageCircle className="w-10 h-10 sm:w-12 h-12 text-slate-600 mx-auto mb-2 sm:mb-3" />
+                        <p className="text-sm sm:text-base">Ask a question about "{selectedPDF.name}"</p>
                       </div>
                     ) : (
                       messages.map((msg, idx) => (
-                        <div key={idx} className="space-y-4">
+                        <div key={idx} className="space-y-3 sm:space-y-4">
                           {/* User Message */}
                           <div className="flex justify-end">
-                            <div className="max-w-2xl bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl rounded-tr-sm p-6 shadow-lg">
-                              <p className="text-white">{msg.question}</p>
+                            <div className="max-w-xs sm:max-w-md md:max-w-2xl bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl rounded-tr-sm p-3 sm:p-4 md:p-6 shadow-lg">
+                              <p className="text-white text-sm sm:text-base">{msg.question}</p>
                               <p className="text-amber-100 text-xs mt-2">You</p>
                             </div>
                           </div>
 
                           {/* AI Message */}
                           <div className="flex justify-start">
-                            <div className="max-w-2xl bg-slate-800/50 border border-slate-700/50 rounded-2xl rounded-tl-sm p-6 backdrop-blur-xl">
-                              <p className="text-slate-200 whitespace-pre-wrap">{msg.answer}</p>
+                            <div className="max-w-xs sm:max-w-md md:max-w-2xl bg-slate-800/50 border border-slate-700/50 rounded-2xl rounded-tl-sm p-3 sm:p-4 md:p-6 backdrop-blur-xl">
+                              <p className="text-slate-200 whitespace-pre-wrap text-sm sm:text-base">{msg.answer}</p>
                               <p className="text-slate-500 text-xs mt-2">AI Response</p>
                             </div>
                           </div>
@@ -198,31 +205,32 @@ export default function PDFChatPage() {
 
         {/* Input Area */}
         {selectedPDF && (
-          <div className="border-t border-slate-700/30 bg-gradient-to-t from-slate-950 to-slate-900/50 backdrop-blur-xl px-8 py-6">
+          <div className="border-t border-slate-700/30 bg-gradient-to-t from-slate-950 to-slate-900/50 backdrop-blur-xl px-4 sm:px-6 md:px-8 py-4 sm:py-6">
             <div className="max-w-4xl mx-auto">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <textarea
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ask a question about the lecture..."
                   rows={3}
-                  className="flex-1 bg-slate-800/50 border border-slate-600/50 rounded-xl px-6 py-4 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200 resize-none"
+                  className="flex-1 bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400/50 focus:ring-2 focus:ring-amber-400/20 transition-all duration-200 resize-none text-sm sm:text-base"
                 />
                 <button
                   onClick={askPDF}
                   disabled={chatLoading || !question.trim()}
-                  className="flex items-center justify-center gap-2 px-8 h-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
                 >
                   {chatLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Thinking...
+                      <span className="hidden sm:inline">Thinking...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     <>
-                      <Send className="w-5 h-5" />
-                      Send
+                      <Send className="w-4 h-4 sm:w-5 h-5" />
+                      <span className="hidden sm:inline">Send</span>
                     </>
                   )}
                 </button>

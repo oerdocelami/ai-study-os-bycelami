@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
 
 export default function PomodoroPage() {
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [sessionType, setSessionType] = useState<"work" | "break">("work");
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
@@ -78,127 +78,124 @@ export default function PomodoroPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 relative overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-1/3 w-96 h-96 bg-red-500/20 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-red-500/20 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
       {/* Content */}
-      <div className="relative z-10">
+      <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="px-8 pt-12 pb-8 border-b border-slate-700/30">
+        <div className="px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 md:pt-12 pb-6 md:pb-8 border-b border-slate-700/30">
           <div className="max-w-2xl mx-auto">
-            <div className="mb-2 text-sm font-medium text-red-400 tracking-wider uppercase">
+            <div className="mb-2 text-xs sm:text-sm font-medium text-red-400 tracking-wider uppercase">
               Focus Timer
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-2 sm:mb-3">
               <span className="bg-gradient-to-r from-red-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent">
                 Pomodoro Timer
               </span>
             </h1>
-            <p className="text-slate-400 text-lg">
-              Stay focused with the Pomodoro Technique. 25 min work + 5 min break.
+            <p className="text-slate-400 text-sm sm:text-base md:text-lg">
+              Stay focused with the Pomodoro technique: 25 min work, 5 min break
             </p>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="px-8 py-12">
-          <div className="max-w-2xl mx-auto">
+        {/* Timer Display */}
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8 py-8 sm:py-12">
+          <div className="w-full max-w-md">
             {/* Timer Circle */}
-            <div className="mb-12 flex justify-center">
-              <div className="relative w-64 h-64 flex items-center justify-center">
-                {/* Background Circle */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-700/50 backdrop-blur-xl"></div>
+            <div className="relative mb-8 sm:mb-12">
+              <svg className="w-full aspect-square" viewBox="0 0 200 200">
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="90"
+                  fill="none"
+                  stroke="rgba(148, 163, 184, 0.2)"
+                  strokeWidth="8"
+                />
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="90"
+                  fill="none"
+                  stroke={sessionType === "work" ? "#ef4444" : "#10b981"}
+                  strokeWidth="8"
+                  strokeDasharray={`${(progress / 100) * 565} 565`}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000"
+                  style={{ transform: "rotate(-90deg)", transformOrigin: "100px 100px" }}
+                />
+              </svg>
 
-                {/* Progress Circle */}
-                <svg className="absolute inset-0 w-full h-full" style={{ transform: "rotate(-90deg)" }}>
-                  <circle
-                    cx="128"
-                    cy="128"
-                    r="120"
-                    fill="none"
-                    stroke="url(#gradient)"
-                    strokeWidth="8"
-                    strokeDasharray={`${(progress / 100) * 754} 754`}
-                    style={{ transition: "stroke-dasharray 1s linear" }}
-                  />
-                  <defs>
-                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor={sessionType === "work" ? "#ef4444" : "#10b981"} />
-                      <stop offset="100%" stopColor={sessionType === "work" ? "#f97316" : "#34d399"} />
-                    </linearGradient>
-                  </defs>
-                </svg>
-
-                {/* Timer Text */}
-                <div className="relative z-10 text-center">
-                  <p className="text-slate-400 text-sm mb-2 uppercase tracking-wider">
-                    {sessionType === "work" ? "Work Time" : "Break Time"}
-                  </p>
-                  <p className="text-6xl font-bold text-white font-mono">{formatTime(timeLeft)}</p>
-                  <p className="text-slate-400 text-sm mt-2">
-                    Session {sessionsCompleted + 1}
-                  </p>
+              {/* Time Display */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="text-4xl sm:text-6xl md:text-7xl font-bold text-white">
+                  {formatTime(timeLeft)}
+                </div>
+                <div className="text-sm sm:text-base text-slate-400 mt-2 sm:mt-4">
+                  {sessionType === "work" ? "Focus Time" : "Break Time"}
                 </div>
               </div>
             </div>
 
             {/* Controls */}
-            <div className="flex gap-4 justify-center mb-12">
-              <button
-                onClick={() => setIsRunning(!isRunning)}
-                className={`flex items-center gap-2 px-8 py-4 rounded-lg font-semibold transition-all ${
-                  isRunning
-                    ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
-                    : "bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
-                }`}
-              >
-                {isRunning ? (
-                  <>
-                    <Pause className="w-5 h-5" />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-5 h-5" />
-                    Start
-                  </>
-                )}
-              </button>
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex gap-3 sm:gap-4 justify-center">
+                <button
+                  onClick={() => setIsRunning(!isRunning)}
+                  className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                >
+                  {isRunning ? (
+                    <>
+                      <Pause className="w-4 h-4 sm:w-5 h-5" />
+                      <span className="hidden sm:inline">Pause</span>
+                      <span className="sm:hidden">Pause</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 sm:w-5 h-5" />
+                      <span className="hidden sm:inline">Start</span>
+                      <span className="sm:hidden">Start</span>
+                    </>
+                  )}
+                </button>
 
-              <button
-                onClick={resetSession}
-                className="flex items-center gap-2 px-8 py-4 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white hover:border-slate-600/50 transition-all"
-              >
-                <RotateCcw className="w-5 h-5" />
-                Reset
-              </button>
+                <button
+                  onClick={resetSession}
+                  className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-slate-700/50 hover:bg-slate-600/50 text-white font-semibold rounded-lg transition-all duration-200 text-sm sm:text-base"
+                >
+                  <RotateCcw className="w-4 h-4 sm:w-5 h-5" />
+                  <span className="hidden sm:inline">Reset</span>
+                  <span className="sm:hidden">Reset</span>
+                </button>
 
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="flex items-center gap-2 px-6 py-4 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white hover:border-slate-600/50 transition-all"
-              >
-                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 text-center">
-                <p className="text-slate-400 mb-2">Sessions Today</p>
-                <p className="text-4xl font-bold text-red-400">{sessionsCompleted}</p>
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-slate-700/50 hover:bg-slate-600/50 text-white font-semibold rounded-lg transition-all duration-200"
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-4 h-4 sm:w-5 h-5" />
+                  ) : (
+                    <Volume2 className="w-4 h-4 sm:w-5 h-5" />
+                  )}
+                </button>
               </div>
 
-              <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 text-center">
-                <p className="text-slate-400 mb-2">Focus Time</p>
-                <p className="text-4xl font-bold text-orange-400">
-                  {Math.floor((sessionsCompleted * 25) / 60)}h {(sessionsCompleted * 25) % 60}m
+              {/* Stats */}
+              <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-4 sm:p-6 text-center">
+                <p className="text-slate-400 mb-2 text-xs sm:text-sm">Sessions Completed</p>
+                <p className="text-3xl sm:text-4xl font-bold text-red-400">{sessionsCompleted}</p>
+              </div>
+
+              {/* Tips */}
+              <div className="bg-slate-800/20 border border-slate-700/30 rounded-xl p-4 sm:p-6">
+                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                  💡 <strong>Tip:</strong> {sessionType === "work"
+                    ? "Stay focused! Avoid distractions during work sessions."
+                    : "Take a break! Stretch and hydrate during your break."}
                 </p>
-              </div>
-
-              <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 text-center">
-                <p className="text-slate-400 mb-2">Current Streak</p>
-                <p className="text-4xl font-bold text-yellow-400">{sessionsCompleted % 4}</p>
               </div>
             </div>
           </div>

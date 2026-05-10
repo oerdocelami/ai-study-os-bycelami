@@ -16,17 +16,26 @@ export default function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user.id) {
+          setLoading(false);
+          return;
+        }
+
         const { count: notesCount } = await supabase
           .from("notes")
-          .select("*", { count: "exact", head: true });
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.user.id);
 
         const { count: cardsCount } = await supabase
           .from("flashcards")
-          .select("*", { count: "exact", head: true });
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.user.id);
 
         const { count: sessionsCount } = await supabase
           .from("study_sessions")
-          .select("*", { count: "exact", head: true });
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.user.id);
 
         setNotesCount(notesCount || 0);
         setFlashcardsCount(cardsCount || 0);
@@ -43,10 +52,17 @@ export default function Dashboard() {
   const startSession = async (type: "notes" | "flashcards") => {
     setStartingSession(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) {
+        alert("Please log in first");
+        return;
+      }
+
       const { error } = await supabase.from("study_sessions").insert({
         type,
         duration: 25,
         completed: false,
+        user_id: session.user.id,
       });
 
       if (error) {
@@ -265,7 +281,7 @@ export default function Dashboard() {
               <div className="absolute inset-0 bg-gradient-to-r from-slate-700/10 to-transparent"></div>
               <div className="relative z-10">
                 <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3">🎯 How It Works</h3>
-                <p className="text-slate-300 text-sm sm:text-base mb-2 sm:mb-3">
+                <p className="text-slate-300 text-xs sm:text-sm md:text-base mb-2 sm:mb-3">
                   1. Create or review notes → 2. Generate flashcards with 🧠 → 3. Study with our flashcard app → 4. Use Pomodoro timer to stay focused
                 </p>
                 <p className="text-slate-400 text-xs sm:text-sm">

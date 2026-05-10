@@ -21,9 +21,16 @@ export default function ChatPage() {
 
   const fetchChatHistory = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user.id) {
+        setPageLoading(false);
+        return;
+      }
+
       const { data } = await supabase
         .from("chats")
         .select("*")
+        .eq("user_id", session.user.id)
         .order("created_at", { ascending: true });
 
       setMessages(data || []);
@@ -35,6 +42,12 @@ export default function ChatPage() {
 
   const askAI = async () => {
     if (!question.trim()) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user.id) {
+      alert("Please log in first");
+      return;
+    }
 
     const userQuestion = question;
     setQuestion("");
@@ -57,10 +70,11 @@ export default function ChatPage() {
         return;
       }
 
-      // Save chat to database
+      // Save chat to database with user_id
       const { error: insertError } = await supabase.from("chats").insert({
         question: userQuestion,
         answer: data.answer,
+        user_id: session.user.id,
       });
 
       if (insertError) {
@@ -108,38 +122,38 @@ export default function ChatPage() {
       {/* Content */}
       <div className="relative z-10 flex flex-col h-screen">
         {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-slate-700/30">
+        <div className="px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 border-b border-slate-700/30">
           <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-3 mb-3">
-              <MessageCircle className="w-8 h-8 text-cyan-400" />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+              <MessageCircle className="w-6 h-6 sm:w-8 h-8 text-cyan-400" />
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
                 Chat with Notes
               </h1>
             </div>
-            <p className="text-slate-400">
+            <p className="text-slate-400 text-xs sm:text-sm md:text-base">
               Ask questions about your study material and get AI-powered explanations
             </p>
           </div>
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto px-8 py-8">
-          <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 sm:py-8">
+          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-96 text-center">
-                <MessageCircle className="w-16 h-16 text-slate-600 mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">No messages yet</h2>
-                <p className="text-slate-400 max-w-md">
+              <div className="flex flex-col items-center justify-center h-64 sm:h-96 text-center">
+                <MessageCircle className="w-12 h-12 sm:w-16 h-16 text-slate-600 mb-3 sm:mb-4" />
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">No messages yet</h2>
+                <p className="text-slate-400 max-w-md text-sm sm:text-base">
                   Start by asking a question about your notes. The AI will search your study material and provide explanations.
                 </p>
               </div>
             ) : (
               messages.map((msg, idx) => (
-                <div key={idx} className="space-y-4">
+                <div key={idx} className="space-y-3 sm:space-y-4">
                   {/* User Message */}
                   <div className="flex justify-end">
-                    <div className="max-w-2xl bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl rounded-tr-sm p-6 shadow-lg">
-                      <p className="text-white">{msg.question}</p>
+                    <div className="max-w-xs sm:max-w-md md:max-w-2xl bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl rounded-tr-sm p-3 sm:p-4 md:p-6 shadow-lg">
+                      <p className="text-white text-sm sm:text-base">{msg.question}</p>
                       <p className="text-blue-100 text-xs mt-2">
                         {new Date(msg.created_at).toLocaleTimeString()}
                       </p>
@@ -148,8 +162,8 @@ export default function ChatPage() {
 
                   {/* AI Message */}
                   <div className="flex justify-start">
-                    <div className="max-w-2xl bg-slate-800/50 border border-slate-700/50 rounded-2xl rounded-tl-sm p-6 backdrop-blur-xl">
-                      <p className="text-slate-200">{msg.answer}</p>
+                    <div className="max-w-xs sm:max-w-md md:max-w-2xl bg-slate-800/50 border border-slate-700/50 rounded-2xl rounded-tl-sm p-3 sm:p-4 md:p-6 backdrop-blur-xl">
+                      <p className="text-slate-200 text-sm sm:text-base">{msg.answer}</p>
                       <p className="text-slate-500 text-xs mt-2">AI Response</p>
                     </div>
                   </div>
@@ -161,36 +175,37 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-slate-700/30 bg-gradient-to-t from-slate-950 to-slate-900/50 backdrop-blur-xl px-8 py-6">
+        <div className="border-t border-slate-700/30 bg-gradient-to-t from-slate-950 to-slate-900/50 backdrop-blur-xl px-4 sm:px-6 md:px-8 py-4 sm:py-6">
           <div className="max-w-4xl mx-auto">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask a question about your notes... (Shift+Enter for new line)"
                 rows={3}
-                className="flex-1 bg-slate-800/50 border border-slate-600/50 rounded-xl px-6 py-4 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 transition-all duration-200 resize-none"
+                className="flex-1 bg-slate-800/50 border border-slate-600/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20 transition-all duration-200 resize-none text-sm sm:text-base"
               />
               <button
                 onClick={askAI}
                 disabled={loading || !question.trim()}
-                className="flex items-center justify-center gap-2 px-8 h-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-sm sm:text-base whitespace-nowrap"
               >
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Thinking...
+                    <span className="hidden sm:inline">Thinking...</span>
+                    <span className="sm:hidden">...</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-5 h-5" />
-                    Send
+                    <Send className="w-4 h-4 sm:w-5 h-5" />
+                    <span className="hidden sm:inline">Send</span>
                   </>
                 )}
               </button>
             </div>
-            <p className="text-xs text-slate-500 mt-3">
+            <p className="text-xs text-slate-500 mt-2 sm:mt-3">
               💡 Tip: Ask specific questions about concepts from your notes for better answers
             </p>
           </div>

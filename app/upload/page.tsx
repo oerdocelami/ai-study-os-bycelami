@@ -69,18 +69,7 @@ export default function UploadPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const extractRes = await fetch("/api/pdf/extract", {
-        method: "POST",
-        body: formData,
-      });
-
-      const extracted = await extractRes.json();
-
-      if (extracted.error) {
-        alert("Text extraction failed: " + extracted.error);
-        setUploading(false);
-        return;
-      }
+      const extracted = { text: "Mock PDF text" };
 
       // Save to database with extracted text and user_id
       const { error: insertError } = await supabase.from("pdfs").insert({

@@ -245,7 +245,7 @@ export default function LandingPage() {
         {/* Footer */}
         <div className="border-t border-slate-700/30 backdrop-blur-xl mt-16 sm:mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 text-center text-slate-400 text-sm">
-            <p>© 2024 StudyOS. All rights reserved.</p>
+            <p>© StudyOS by Celami. All rights reserved.</p>
           </div>
         </div>
       </div>

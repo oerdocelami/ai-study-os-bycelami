@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     // MOCK AI - Generate flashcards from content
     // Later: Replace with actual OpenAI API
-    const sentences = content.split(".").filter(s => s.trim().length > 0);
+    const sentences = content.split(".").filter((s: string) => s.trim().length > 0);
     
     const flashcards = [];
     
